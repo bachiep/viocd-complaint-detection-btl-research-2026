@@ -183,6 +183,11 @@ def create_handler(estimator: Any, public_metadata: dict[str, Any], segmenter: A
             if self.path == "/api/health":
                 self.send_json(200, {"status": "ready", **public_metadata})
                 return
+            if self.path == "/favicon.ico":
+                self.send_response(204)
+                self.send_header("Cache-Control", "no-store")
+                self.end_headers()
+                return
             if self.path != "/":
                 self.send_error(404)
                 return
