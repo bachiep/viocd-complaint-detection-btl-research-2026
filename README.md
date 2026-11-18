@@ -19,6 +19,7 @@ Selection was made on validation data: S0 Macro-F1 0.92070, P0 mean 0.91648, and
 ## Contents
 
 - `src/nlp_btl/`: data, preprocessing, baseline, PhoBERT training, selection, terminal evaluation, and numerical audit code.
+- `preparation/scripts/audit_eda_lengths.py`: aggregate-only descriptive length/token audit used to build the report's EDA table; it does not fit or select a model.
 - `tests/`: synthetic and contract-focused tests; they do not include source review text.
 - `preparation/protocol.json`: locked experiment protocol. Private data manifests and split files are not included.
 - `demo/`: local demo source and its pinned runtime requirements. The trained S0 artifact is intentionally omitted, so the demo cannot be run from this public snapshot alone.
@@ -30,6 +31,8 @@ Selection was made on validation data: S0 Macro-F1 0.92070, P0 mean 0.91648, and
 Python 3.13.16; Tesla T4 × 2; CUDA 13.0; PyTorch 2.11.0+cu130; Transformers 4.51.3; tokenizers 0.21.4; NumPy 2.1.3; pandas 2.3.3; scikit-learn 1.8.0; Underthesea 9.5.0; py_vncorenlp 0.1.4; pyjnius 1.9.0; Java 21.0.12.1.
 
 An exact rerun requires access to the private Kaggle kernels and input datasets plus the pinned data snapshot. See the project owner for the appropriate course-review access. Do not place raw reviews, credential files, checkpoints, or per-row predictions in this repository.
+
+The aggregate EDA script requires the group's private `data_manifest.json`, preparation lock, tokenizer audit receipt and RDR assets, plus authorized access to the pinned source CSV files and the package versions listed in the script. Those inputs are intentionally omitted from this repository. It writes only split-level aggregate distributions to `results/eda/viocd_length_token_audit.json`; it refuses to overwrite an existing output and does not persist review text, row IDs, token IDs or per-review measurements. The local report documents the resulting source hashes and cohort counts.
 
 ## Data use
 

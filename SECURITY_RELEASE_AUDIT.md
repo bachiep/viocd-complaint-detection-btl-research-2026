@@ -6,7 +6,7 @@
 
 | Check | Result | Evidence / boundary |
 |---|---|---|
-| File allowlist and inventory | PASS | 38 source, protocol, test, demo, notice, ignore-rule, line-ending, and hash-manifest files; no symlinks or large binary payloads |
+| File allowlist and inventory | PASS | 39 source, protocol, test, demo, notice, ignore-rule, line-ending, and hash-manifest files; no symlinks or large binary payloads. Added `preparation/scripts/audit_eda_lengths.py`, an aggregate-only audit that requires private manifests/RDR assets not included here. |
 | Credential-pattern scan | PASS | No matches for GitHub, Hugging Face, AWS, Google, OpenAI-style keys, or literal credential assignments; scanner did not print candidate values |
 | Private data and model artifacts | PASS | No CSV/TSV/JSONL/Parquet, pickle/joblib, safetensors, PT/PTH, or checkpoint files included |
 | Demo network boundary | PASS | Demo binds to `127.0.0.1`, limits input size, does not persist request text, and is not configured as a public service; the project runtime receipt records 5/5 synthetic API checks |
