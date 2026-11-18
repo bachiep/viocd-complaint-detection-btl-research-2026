@@ -1,0 +1,421 @@
+{
+  "schema_version": 1,
+  "protocol_id": "viocd-segmentation-core-v1",
+  "created_date": "2026-11-16",
+  "status": "frozen_for_preparation",
+  "scope": {
+    "title": "Xây dựng và đánh giá hệ thống phát hiện lời phàn nàn trong đánh giá sản phẩm tiếng Việt",
+    "phase": "preparation_only_no_training_or_Kaggle_submission",
+    "primary_question": "Effect of the Underthesea versus pinned VnCoreNLP/RDR word-segmentation pipeline on PhoBERT under the same partial-fine-tuning schedule",
+    "primary_contrast": [
+      "P1",
+      "P0"
+    ],
+    "historical_source_commit": "fd7369774fd53e5a1e6a930b2909fa4465ec38d6",
+    "historical_notebook": "../baseline_reference/ViOCD_Kaggle_GPU_3seed.ipynb",
+    "historical_notebook_worktree_sha256": "a25cd943be575d4f469e05dd2393511e70ab2ae7664e96790226440f9f347c65",
+    "proposed_runtime": "Private Kaggle CUDA GPU; no CPU training fallback"
+  },
+  "dataset": {
+    "repository": "tarudesu/ViOCD",
+    "revision": "25e1851683ebc407d28e5a2d514b7ae0eadd4e4b",
+    "source_base_url": "https://huggingface.co/datasets/tarudesu/ViOCD/resolve/25e1851683ebc407d28e5a2d514b7ae0eadd4e4b/",
+    "manifest_file": "data_manifest.json",
+    "manifest_sha256": "c0253fd4789804925a7fc599e24eb1515b655e983aa38b26288b296ed607fdd7",
+    "expected_counts": {
+      "train": 4157,
+      "val": 544,
+      "test": 546
+    },
+    "evaluation_status": "historical_post_hoc_internal_evaluation_not_independent_confirmation",
+    "retention_priority": [
+      "test",
+      "val",
+      "train"
+    ],
+    "label_mapping": {
+      "0": "không có lời phàn nàn",
+      "1": "có lời phàn nàn"
+    },
+    "domains": [
+      "app",
+      "cosmetic",
+      "fashion",
+      "mobile"
+    ],
+    "fit_policy": "Learned transforms and model fitting use retained train only; validation selects checkpoints/configuration; historical test used only for terminal descriptive evaluation",
+    "new_independent_test": false,
+    "decision": {
+      "state": "accepted_for_core_preparation",
+      "reason": "UIT-ViOCD has task-matched Vietnamese complaint/non-complaint review labels, rather than proxy sentiment or star labels. Prior use is not a reason by itself to retain it.",
+      "review_document": "DATASET_OPTIONS_REVIEW.md",
+      "reselection_rule": "Change before freeze if verified task-fit, provenance, label quality and usable rights justify another source; regenerate split/data manifest and all configurations rather than combine incompatible labels",
+      "historical_data_role": "If retained, pinned old cohort remains historical; it is not a newly independent corpus",
+      "accepted_by": "root_coordinator_after_primary_source_dataset_options_review",
+      "acceptance_date": "2026-11-16"
+    }
+  },
+  "model": {
+    "id": "vinai/phobert-base",
+    "revision": "01daacda68afe13d83023d16ec647239e344a1e6",
+    "num_labels": 2,
+    "config_sha256": "71df79a67a65b1ee472938d0dff77297c0d77e20fef1af41e0013b1d384efb0d",
+    "config_defaults_verified": {
+      "hidden_dropout_prob": 0.1,
+      "attention_probs_dropout_prob": 0.1,
+      "classifier_dropout": null,
+      "num_hidden_layers": 12,
+      "hidden_size": 768,
+      "max_position_embeddings": 258,
+      "pad_token_id": 1
+    },
+    "tokenizer_use_fast": false,
+    "classification_head": "AutoModelForSequenceClassification(num_labels=2), seeded separately per fit; no custom dropout override",
+    "initialization": "Reload pinned pretrained base for every configuration/seed; never initialize from a historical fine-tuned checkpoint"
+  },
+  "experiment_matrix": [
+    {
+      "id": "S0",
+      "kind": "tfidf_linearsvc",
+      "segmentation": "underthesea",
+      "trainable_scope": "classical_pipeline",
+      "seeds": [
+        42
+      ],
+      "role": "fixed_strong_baseline_refit"
+    },
+    {
+      "id": "P0",
+      "kind": "phobert",
+      "segmentation": "underthesea",
+      "trainable_scope": "last_two_encoder_layers_and_classifier",
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "role": "control"
+    },
+    {
+      "id": "P1",
+      "kind": "phobert",
+      "segmentation": "vncorenlp_rdr",
+      "trainable_scope": "last_two_encoder_layers_and_classifier",
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "role": "segmentation_pipeline_contrast"
+    }
+  ],
+  "preprocessing": {
+    "normalization": [
+      "Unicode NFC",
+      "lowercase",
+      "collapse whitespace with str.split then single-space join"
+    ],
+    "shared_boundary": "raw review -> shared normalization -> selected segmenter -> single-space joined review text -> same pinned PhoBERT tokenizer",
+    "underthesea": {
+      "version": "9.5.0",
+      "call": "word_tokenize(normalized_review, format='text')"
+    },
+    "rdr": {
+      "wrapper_package": "py_vncorenlp",
+      "wrapper_version": "0.1.4",
+      "pyjnius_version": "1.9.0",
+      "wrapper_sdist_sha256": "9049209e838b0fa1fcefa4b24695afc0e51eb4b38ec4e1279402c20c9a0680e8",
+      "repository": "https://github.com/vncorenlp/VnCoreNLP",
+      "revision": "62bbc58fe5d113c898eae112656be97dcf50b3a0",
+      "annotators": [
+        "wseg"
+      ],
+      "sentence_join": "Preserve sentence order, join returned segmented sentences with one ASCII space; no stopword removal or punctuation stripping",
+      "assets_manifest": "rdr_assets_verification.json",
+      "java_minimum": "1.8+ according to upstream; target runtime version must be logged",
+      "local_java_smoke": "PASS; Windows Java21 synthetic sentence only",
+      "local_python_wrapper_smoke": "PASS; isolated Windows target py_vncorenlp0.1.4 plus pyjnius1.9.0, synthetic sentence only",
+      "kaggle_wrapper_smoke": "PENDING"
+    },
+    "stopword_removal": false,
+    "stemming_or_lemmatization": false,
+    "case_policy_reason": "Hold historical lowercasing fixed; experiment is not a full match to pretraining preprocessing",
+    "collision_rule": "Before fitting, audit exact normalized, segmenter-output and truncated-token-ID duplicates across splits without using heldout labels to choose rules. Halt on a cross-split collision; investigate via a documented amendment before any training, never silently drop rows or change test population",
+    "full_corpus_segmentation_audit": {
+      "artifact": "segmentation_audit.json",
+      "status": "PASS",
+      "scope": "Fresh5247 retained reviews, Underthesea and pinned RDR, localCPU/Java; no training or GPU inference",
+      "empty_outputs": 0,
+      "within_split_duplicates": 0,
+      "cross_split_overlaps": 0,
+      "cohort_changed": false
+    },
+    "tokenizer_input_audit": {
+      "artifact": "tokenizer_input_audit.json",
+      "status": "EXACT_CROSS_SPLIT_COLLISION_GATE_PASS",
+      "scope": "Local tokenization only, pinned config/vocab/BPE; no model weights or training",
+      "cross_split_full_and_truncated_overlap": 0,
+      "within_train_truncated_duplicate_rows_per_arm": {
+        "P0": 1,
+        "P1": 1
+      },
+      "within_train_full_duplicate_rows_per_arm": {
+        "P0": 0,
+        "P1": 0
+      },
+      "truncation_counts_per_arm": {
+        "train": 15,
+        "val": 0,
+        "test": 2
+      },
+      "known_limit_policy": "Preserve cohort and per-review weighting; intra-train duplicate after truncation is a documented representation limit, not cross-split leakage. Do not alter labels/drop rows/change max_length based on score. Do not infer identical duplicate row identities across arms unless checked",
+      "train_duplicate_label_conflict_detail": {
+        "P0": {
+          "duplicate_groups": 1,
+          "rows_in_duplicate_groups": 2,
+          "conflicting_label_groups": 0,
+          "rows_in_conflicting_label_groups": 0
+        },
+        "P1": {
+          "duplicate_groups": 1,
+          "rows_in_duplicate_groups": 2,
+          "conflicting_label_groups": 0,
+          "rows_in_conflicting_label_groups": 0
+        }
+      }
+    }
+  },
+  "training": {
+    "epochs": 3,
+    "max_length": 128,
+    "micro_batch": 8,
+    "gradient_accumulation": 4,
+    "nominal_effective_batch": 32,
+    "gradient_normalization": "sample_weighted_actual_accumulation_group_size_including_final_partial_group",
+    "learning_rate": 3e-05,
+    "optimizer": {
+      "name": "torch.optim.AdamW",
+      "weight_decay": 0.01,
+      "fused": true,
+      "betas": [
+        0.9,
+        0.999
+      ],
+      "eps": 1e-08,
+      "amsgrad": false,
+      "note": "Betas/eps/amsgrad inherit PyTorch defaults; implementation must assert actual values"
+    },
+    "schedule": {
+      "name": "linear_with_warmup",
+      "warmup_steps": "floor(0.1 * total_optimizer_steps)",
+      "steps_per_epoch": "ceil(number_of_microbatches / 4)",
+      "advance_after": "successful AMP optimizer step only"
+    },
+    "max_grad_norm": 1.0,
+    "precision": "CUDA autocast float16 with torch.amp.GradScaler('cuda')",
+    "allow_tf32": true,
+    "threads": 4,
+    "dataloader": {
+      "shuffle_train": true,
+      "shuffle_val_test": false,
+      "num_workers": 0,
+      "pin_memory": true,
+      "padding": "dynamic",
+      "pad_to_multiple_of": 8
+    },
+    "frozen_modules_mode": "Freeze embeddings and first ten encoder layers; force frozen modules eval() each epoch; last two layers/classifier train()",
+    "seed_policy": "transformers.set_seed(seed) before fresh model/head and loader initialization for every fit; same seed paired across P0/P1",
+    "run_order": [
+      "P0_seed42",
+      "P1_seed42",
+      "P1_seed43",
+      "P0_seed43",
+      "P0_seed44",
+      "P1_seed44"
+    ],
+    "failure_policy": "Keep failed attempt metadata; inspect before retry. Retry same locked configuration for technical failure only, not because validation/test score is disappointing"
+  },
+  "baseline": {
+    "vectorizer": {
+      "name": "TfidfVectorizer",
+      "tokenizer": "str.split",
+      "token_pattern": null,
+      "lowercase": false,
+      "ngram_range": [
+        1,
+        2
+      ],
+      "min_df": 2,
+      "max_df": 1.0,
+      "norm": "l2",
+      "use_idf": true,
+      "smooth_idf": true,
+      "sublinear_tf": false,
+      "max_features": null,
+      "stop_words": null,
+      "analyzer": "word",
+      "binary": false
+    },
+    "classifier": {
+      "name": "LinearSVC",
+      "C": 1.0,
+      "class_weight": null,
+      "dual": "auto",
+      "fit_intercept": true,
+      "intercept_scaling": 1,
+      "loss": "squared_hinge",
+      "max_iter": 1000,
+      "multi_class": "ovr",
+      "penalty": "l2",
+      "random_state": 42,
+      "tol": 0.0001,
+      "verbose": 0
+    },
+    "fit_scope": "Pipeline fit on retained train only; no A/B/C re-selection in this fixed S0 protocol",
+    "repetitions": 1,
+    "seed_mean_comparison_note": "S0 is one fixed deterministic classical fit; P0/P1 mean is across three stochastic fits on the same examples, not an ensemble or three times more test samples"
+  },
+  "selection": {
+    "primary_metric": "macro_f1",
+    "labels": [
+      0,
+      1
+    ],
+    "zero_division": 0,
+    "epoch_rule": "For each P0/P1 seed, choose greatest validation Macro-F1 among epochs1..3; strict greater-than update retains earliest epoch on an exact tie",
+    "configuration_rule": "Compare S0 validation Macro-F1 with the arithmetic mean of the three selected-checkpoint validation Macro-F1 scores for P0/P1; choose maximum",
+    "tie_tolerance": 1e-12,
+    "tie_break_order": [
+      "S0",
+      "P0",
+      "P1"
+    ],
+    "tie_interpretation": "Numerical tie policy only; does not establish statistical equivalence or operational non-inferiority",
+    "test_usage": "No test scores/predictions in the development training loop. Save all validation outcomes and selected configuration before a separate terminal test evaluation of all declared configurations. Historical test remains post-hoc",
+    "demo_rule": "Primary demo uses validation-selected family. If PhoBERT selected, use seed42 predeclared checkpoint and identify its own score separately from three-seed mean. Research demo may expose other models with explicit labels",
+    "no_refit_on_validation": true,
+    "no_test_driven_retry_or_extension": true
+  },
+  "evaluation": {
+    "primary": "Clean historical test P1-minus-P0 difference in mean per-seed Macro-F1, interpreted descriptively alongside validation and exposure history",
+    "secondary": [
+      "S0 versus P0/P1",
+      "precision/recall/F1 for both labels",
+      "accuracy and confusion matrices",
+      "per-domain metrics with denominators",
+      "truncation/token-length audit",
+      "observed training time and peak VRAM",
+      "deterministic paired error examples"
+    ],
+    "bootstrap": {
+      "resamples": 10000,
+      "random_seed": 20261116,
+      "method": "paired label-stratified review resampling with same sampled rows for every configuration/seed",
+      "interval": "percentile 2.5 and 97.5",
+      "estimand": "difference of mean per-seed Macro-F1 for P1/P0, fixed fitted seeds",
+      "scope_limit": "Conditional on these fitted models and historical fixed sample; no model-selection, future-seed or independent-domain guarantee"
+    },
+    "error_examples": {
+      "primary_seed": 42,
+      "per_true_label_per_transition_max": 3,
+      "transitions": [
+        "P0_wrong_P1_correct",
+        "P0_correct_P1_wrong",
+        "both_wrong"
+      ],
+      "allocation": "largest-remainder proportional allocation over domains within each true-label/transition, domain-name ascending tie break",
+      "sampling_seed": 42,
+      "interpretation": "Illustrative diagnosis, not representative population error-frequency estimation"
+    },
+    "hypothesis_policy": "One primary contrast; remaining comparisons descriptive. CI including zero supports neither established superiority nor equivalence"
+  },
+  "environment": {
+    "historical_observed": {
+      "python": "3.13.16",
+      "numpy": "2.1.3",
+      "pandas": "2.3.3",
+      "scikit-learn": "1.8.0",
+      "underthesea": "9.5.0",
+      "matplotlib": "3.10.8",
+      "transformers": "4.51.3",
+      "tokenizers": "0.21.4",
+      "torch": "2.11.0+cu130",
+      "cuda": "13.0",
+      "gpu": "Tesla T4"
+    },
+    "explicit_package_targets": {
+      "numpy": "2.1.3",
+      "pandas": "2.3.3",
+      "scikit-learn": "1.8.0",
+      "underthesea": "9.5.0",
+      "matplotlib": "3.10.8",
+      "transformers": "4.51.3",
+      "tokenizers": "0.21.4",
+      "py_vncorenlp": "0.1.4",
+      "pyjnius": "1.9.0"
+    },
+    "torch_cuda_policy": "Inspect and record Kaggle CUDA image in preflight; no silent container/library substitution. If incompatible with locked training APIs, amend protocol before fitting",
+    "unverified": [
+      "New Kaggle image Python/torch/CUDA versions",
+      "pyjnius/wrapper compatibility on target Kaggle Python",
+      "Target GPU availability/quota"
+    ]
+  },
+  "optional_extensions": {
+    "full_finetuning_factorial": "deferred_not_selected_not_auto_run",
+    "cross_validation": "deferred_not_selected",
+    "character_ngrams_or_augmentation": "deferred_not_selected",
+    "new_human_gold_corpus": "conditional_future_only_not_required_for_core"
+  },
+  "artifacts": {
+    "before_fit": [
+      "protocol freeze receipt and source SHA",
+      "dataset/split manifest verification",
+      "runtime versions/GPU metadata",
+      "normalized/segmented/token-ID collision audits",
+      "resource and import smoke evidence"
+    ],
+    "development": [
+      "per-epoch history",
+      "validation predictions keyed by split/source-row ID",
+      "checkpoint config/tokenizer/trainable weights",
+      "trainable parameter names/count",
+      "validation selection.json without test metrics"
+    ],
+    "terminal_evaluation": [
+      "per-seed test predictions keyed by split/source-row ID",
+      "per-class and domain metrics",
+      "paired bootstrap",
+      "error transitions/examples",
+      "checkpoint restore comparison",
+      "input-truncation audit",
+      "source/output hashes"
+    ],
+    "privacy": "Keep raw corpus, row-level outputs, checkpoints and whole execution logs private; public code only within prior user authorization and source conditions",
+    "screenshots": "Capture actual target runtime and completed run only after they exist; bind evidence image to run ID/source/version"
+  },
+  "readiness_blockers": [
+    "New separated development/terminal-evaluation trainer has not been implemented or tested",
+    "Kaggle Python wrapper/import/resource smoke not yet executed"
+  ],
+  "evidence": {
+    "historical_loader_and_baseline": "../baseline_reference/ViOCD_Kaggle_GPU_3seed.ipynb cell3",
+    "historical_training": "../baseline_reference/ViOCD_Kaggle_GPU_3seed.ipynb cell12",
+    "historical_environment": "../../audit_2026-11-15/run4/downloaded_output/results_phobert/environment.json",
+    "fresh_source_manifest": "data_manifest.json",
+    "upstream_phobert": "https://github.com/VinAIResearch/PhoBERT#notes",
+    "upstream_vncorenlp": "https://github.com/vncorenlp/VnCoreNLP",
+    "pinned_model_config": "https://huggingface.co/vinai/phobert-base/resolve/01daacda68afe13d83023d16ec647239e344a1e6/config.json",
+    "fresh_full_corpus_segmentation": "segmentation_audit.json",
+    "fresh_tokenizer_input_audit": "tokenizer_input_audit.json",
+    "reproducible_data_audit_script": "scripts/audit_data.py",
+    "reproduced_data_audit": "data_preflight_reproduction.json"
+  },
+  "preparation_acceptance": {
+    "approved_by": "root_coordinator_after_independent_QA_review",
+    "approved_date_local": "2026-11-16",
+    "receipt": "preparation_lock.json",
+    "interpretation": "Preparation only; not permission to treat an unimplemented trainer or current Kaggle GPU as verified",
+    "freeze_validation": "preparation_check_candidate_locked.json"
+  }
+}

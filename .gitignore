@@ -1,0 +1,28 @@
+# Never add private data, model artifacts, or run outputs to this source snapshot.
+data/
+results/
+staging/
+report/
+*.csv
+*.tsv
+*.jsonl
+*.parquet
+*.pkl
+*.pickle
+*.joblib
+*.safetensors
+*.pt
+*.pth
+*.zip
+
+# Credentials and local runtime files.
+.env
+.env.*
+kaggle.json
+credentials*
+access_token*
+refresh_token*
+.venv/
+venv/
+__pycache__/
+.pytest_cache/
