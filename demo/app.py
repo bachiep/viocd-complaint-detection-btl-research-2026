@@ -13,13 +13,21 @@ from typing import Any
 
 
 LOCKED_PROTOCOL_SHA256 = "65b26012eb1117f0674f8eb3502d0e289ba006b8c287b99f1a72cec115e76ae3"
+LOCKED_PROTOCOL_TEXT_SHA256 = "5dc1c3fd3831a8738568b3b1064ffdb937e77df5ca90f6d93be41b1d69a81c0c"
 LOCKED_SELECTION_SHA256 = "36354e5a389651eae7223d66e4566246e0b78659330f12d63929f64f75e581d1"
 LOCKED_RUN_METADATA_SHA256 = "069ba05b557465acb2ce52137035836b29c875dee8b7421114d790e541a7cc00"
 LOCKED_PIPELINE_SHA256 = "f03708959c4694cafdf05232c4d80e86e9637418f0c7901b9c1a111428a1bcca"
-LOCKED_SOURCE_SHA256 = {
+LOCKED_SOURCE_PROVENANCE_SHA256 = {
     "baseline.py": "6a0bba3106ba1eaf385d50c3c08d3e59f57b0d10c3404600f282f515852ed240",
     "data.py": "05024028f0212141d151abcd5b6e6653e2be9f1d1b21020aaa4b0dd4c419eaf1",
     "phobert.py": "5855789b39e0827ad9aa53532d4a14f856b25a13f723ce76250c374aa2d52101",
+    "preprocessing.py": "5a4921ed1466d899bf8decf195e90af391ea8e2260932a5867129c5911c14b01",
+    "selection.py": "fafdb8c08879a36eea11a5356764c3c0a0c0303bda5b78c54fbcd0051b1f8b00",
+}
+LOCKED_SOURCE_TEXT_SHA256 = {
+    "baseline.py": "6a0bba3106ba1eaf385d50c3c08d3e59f57b0d10c3404600f282f515852ed240",
+    "data.py": "849a35ed971a9b5c16fc3abb23e847256544035ec159de5fd9d329b8ba914880",
+    "phobert.py": "f7811831f8633688359faec2015a24c10c00627f483f62cdc197b96130498510",
     "preprocessing.py": "5a4921ed1466d899bf8decf195e90af391ea8e2260932a5867129c5911c14b01",
     "selection.py": "fafdb8c08879a36eea11a5356764c3c0a0c0303bda5b78c54fbcd0051b1f8b00",
 }
@@ -46,6 +54,12 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def sha256_text_file(path: Path) -> str:
+    """Hash UTF-8 source/protocol bytes after canonicalizing platform newlines."""
+    content = path.read_bytes().replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    return hashlib.sha256(content).hexdigest()
+
+
 def read_json(path: Path) -> dict[str, Any]:
     try:
         value = json.loads(path.read_text(encoding="utf-8"))
@@ -58,6 +72,12 @@ def read_json(path: Path) -> dict[str, Any]:
 
 def require_hash(path: Path, expected: str, label: str) -> None:
     observed = sha256_file(path)
+    if observed != expected:
+        raise DemoIntegrityError(f"Hash {label} không khớp hồ sơ đã khóa")
+
+
+def require_text_hash(path: Path, expected: str, label: str) -> None:
+    observed = sha256_text_file(path)
     if observed != expected:
         raise DemoIntegrityError(f"Hash {label} không khớp hồ sơ đã khóa")
 
@@ -83,7 +103,7 @@ def load_model(project_root: Path) -> tuple[Any, dict[str, Any], Any]:
     selection_path = project_root / "results/m2_dev_v15_20261118_r3/selection.json"
     run_dir = project_root / "results/m2_dev_v15_20261118_r3/S0_seed42"
     metadata_path = run_dir / "run_metadata.json"
-    require_hash(protocol_path, LOCKED_PROTOCOL_SHA256, "protocol")
+    require_text_hash(protocol_path, LOCKED_PROTOCOL_TEXT_SHA256, "protocol")
     require_hash(selection_path, LOCKED_SELECTION_SHA256, "selection")
     require_hash(metadata_path, LOCKED_RUN_METADATA_SHA256, "run metadata")
 
@@ -108,11 +128,15 @@ def load_model(project_root: Path) -> tuple[Any, dict[str, Any], Any]:
         raise DemoIntegrityError("Pipeline hash trong metadata khác")
     if selection.get("protocol_sha256") != LOCKED_PROTOCOL_SHA256:
         raise DemoIntegrityError("Selection trỏ đến protocol khác")
-    if selection.get("source_sha256") != LOCKED_SOURCE_SHA256:
+    if selection.get("source_sha256") != LOCKED_SOURCE_PROVENANCE_SHA256:
         raise DemoIntegrityError("Selection chứa hash nguồn khác demo đã khóa")
 
-    for filename, expected in LOCKED_SOURCE_SHA256.items():
-        require_hash(project_root / "src/nlp_btl" / filename, expected, filename)
+    for filename, expected in LOCKED_SOURCE_TEXT_SHA256.items():
+        require_text_hash(
+            project_root / "src/nlp_btl" / filename,
+            expected,
+            filename,
+        )
 
     mapping = protocol["dataset"]["label_mapping"]
     if mapping != {"0": "không có lời phàn nàn", "1": "có lời phàn nàn"}:

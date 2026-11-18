@@ -15,7 +15,13 @@ staging/.venv_demo/Scripts/python.exe demo/app.py
 
 Mở `http://127.0.0.1:8765`. Dừng máy chủ bằng `Ctrl+C`.
 
-Khi khởi động, ứng dụng kiểm tra hash của protocol, selection, run metadata, pipeline và năm tệp nguồn; đồng thời yêu cầu đúng phiên bản NumPy, scikit-learn và Underthesea. Nếu một giá trị khác bằng chứng đã nghiệm thu, ứng dụng dừng thay vì tải artifact khác.
+Khi khởi động, ứng dụng kiểm tra hash của protocol, selection, run metadata, pipeline và năm tệp nguồn; đồng thời yêu cầu đúng phiên bản NumPy, scikit-learn và Underthesea. Hash của protocol và mã nguồn chuẩn hóa CRLF/LF thành LF để cùng một nội dung hoạt động trên Windows và Git checkout; hash của selection, run metadata và pipeline vẫn kiểm tra theo byte gốc. Các trường hash trong artifact tiếp tục đối chiếu với provenance của lần chạy. Nếu nội dung hoặc artifact khác bằng chứng đã nghiệm thu, ứng dụng dừng thay vì tải artifact khác.
+
+Có thể kiểm tra quy tắc chuẩn hóa dòng bằng kiểm thử hồi quy:
+
+```powershell
+staging/.venv_demo/Scripts/python.exe -m unittest tests.test_demo_integrity
+```
 
 ## Phạm vi và quyền riêng tư
 
