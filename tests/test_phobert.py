@@ -17,6 +17,18 @@ from torch import nn
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
+PUBLIC_SOURCE_SNAPSHOT = (ROOT / "PUBLIC_SOURCE_SNAPSHOT").is_file()
+PRIVATE_READINESS_ASSETS_AVAILABLE = all(
+    (ROOT / relative).is_file()
+    for relative in (
+        "preparation/preparation_lock.json",
+        "preparation/segmentation_audit.json",
+        "preparation/tokenizer_input_audit.json",
+        "preparation/data_manifest.json",
+    )
+)
+PRIVATE_STAGED_NOTEBOOK_AVAILABLE = (ROOT / "staging/kernel/m1_08_cuda_pilot.ipynb").is_file()
+PRIVATE_TRUSTED_REVIEWERS_AVAILABLE = (ROOT / "preparation/m1_09_trusted_reviewers.json").is_file()
 
 from nlp_btl.phobert import (
     CHECKPOINT_BINDING_FIELDS,
@@ -50,6 +62,10 @@ from nlp_btl.phobert import (
 from nlp_btl import data as data_module
 from nlp_btl.data import DatasetBundle, ReviewRecord, _sha256
 from nlp_btl.pilot import _publish_pilot_success
+
+PRIVATE_SOURCE_BUNDLE_AVAILABLE = all(
+    (ROOT / relative).is_file() for relative in M1_09_SOURCE_BUNDLE_ALLOWLIST
+)
 
 
 PROTOCOL_PATH = ROOT / "preparation" / "protocol.json"
@@ -244,6 +260,10 @@ class PhoBertContractTests(unittest.TestCase):
         with self.assertRaisesRegex(PhoBertTrainingError, "must not reference the research fit runner"):
             _validate_submitted_pilot_notebook(aliased_research)
 
+    @unittest.skipUnless(
+        not PUBLIC_SOURCE_SNAPSHOT or PRIVATE_STAGED_NOTEBOOK_AVAILABLE,
+        "requires the private staged M1-08 notebook omitted from the public snapshot",
+    )
     def test_m1_09_notebook_code_must_match_staged_notebook_ast(self) -> None:
         staged = json.loads(
             (ROOT / "staging/kernel/m1_08_cuda_pilot.ipynb").read_text(encoding="utf-8")
@@ -350,6 +370,10 @@ class PhoBertContractTests(unittest.TestCase):
                 )
             )
 
+    @unittest.skipUnless(
+        not PUBLIC_SOURCE_SNAPSHOT or PRIVATE_SOURCE_BUNDLE_AVAILABLE,
+        "requires private preparation assets omitted from the public snapshot",
+    )
     def test_m1_09_source_bundle_rejects_extra_or_stale_files(self) -> None:
         source_root = ROOT.resolve()
         files = {
@@ -396,7 +420,7 @@ class PhoBertContractTests(unittest.TestCase):
             _validate_m1_09_preparation_root(ROOT / "preparation"),
             (ROOT / "preparation").resolve(),
         )
-        with tempfile.TemporaryDirectory(dir=ROOT / "results") as temporary:
+        with tempfile.TemporaryDirectory() as temporary:
             with self.assertRaisesRegex(PhoBertTrainingError, "reviewed checkout root"):
                 _validate_m1_09_preparation_root(temporary)
 
@@ -701,6 +725,10 @@ class PhoBertContractTests(unittest.TestCase):
         with self.assertRaisesRegex(PhoBertTrainingError, "trusted membership"):
             _validate_development_bundle(tampered_bundle, PROTOCOL, manifest)
 
+    @unittest.skipUnless(
+        not PUBLIC_SOURCE_SNAPSHOT or PRIVATE_READINESS_ASSETS_AVAILABLE,
+        "requires the private preparation lock omitted from the public snapshot",
+    )
     def test_runner_records_blocked_attempt_when_cuda_is_unavailable(self) -> None:
         revision = PROTOCOL["dataset"]["revision"]
         train = (
@@ -762,6 +790,10 @@ class PhoBertContractTests(unittest.TestCase):
             self.assertEqual(run_metadata["status"], "BLOCKED")
             self.assertFalse(run_metadata["test_split_available_to_runner"])
 
+    @unittest.skipUnless(
+        not PUBLIC_SOURCE_SNAPSHOT or PRIVATE_READINESS_ASSETS_AVAILABLE,
+        "requires the private preparation lock omitted from the public snapshot",
+    )
     def test_runner_cannot_fit_without_gate_b_readiness_receipt(self) -> None:
         revision = PROTOCOL["dataset"]["revision"]
         train = (
@@ -843,6 +875,16 @@ class PhoBertContractTests(unittest.TestCase):
             with self.assertRaisesRegex(PhoBertTrainingError, "GPU capacity differs from the passed pilot"):
                 _verify_cuda_pilot_runtime(changed_runtime, pilot)
 
+    @unittest.skipUnless(
+        not PUBLIC_SOURCE_SNAPSHOT
+        or (
+            PRIVATE_READINESS_ASSETS_AVAILABLE
+            and PRIVATE_TRUSTED_REVIEWERS_AVAILABLE
+            and PRIVATE_SOURCE_BUNDLE_AVAILABLE
+            and PRIVATE_STAGED_NOTEBOOK_AVAILABLE
+        ),
+        "requires the private readiness bundle, reviewer trust anchor, source bundle, and staged notebook",
+    )
     def test_readiness_gate_accepts_bound_fixture_and_rejects_stale_or_colliding_audit(self) -> None:
         import nlp_btl.phobert as phobert_module
         import nlp_btl.preprocessing as preprocessing_module

@@ -5,6 +5,20 @@ import copy
 from pathlib import Path
 import tempfile
 import unittest
+import pytest
+
+ROOT = Path(__file__).resolve().parents[1]
+PUBLIC_SOURCE_SNAPSHOT = (ROOT / "PUBLIC_SOURCE_SNAPSHOT").is_file()
+REQUIRED_SCRIPTS = (
+    "preparation/scripts/check_kaggle_pilot_staging.py",
+    "preparation/scripts/kaggle_staging_helpers.py",
+    "preparation/scripts/stage_kaggle_pilot.py",
+)
+if PUBLIC_SOURCE_SNAPSHOT and not all((ROOT / path).is_file() for path in REQUIRED_SCRIPTS):
+    pytest.skip(
+        "requires private Kaggle staging scripts omitted from the public snapshot",
+        allow_module_level=True,
+    )
 
 from preparation.scripts.check_kaggle_pilot_staging import (
     validate_flat_upload,

@@ -13,6 +13,15 @@ from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
+PUBLIC_SOURCE_SNAPSHOT = (ROOT / "PUBLIC_SOURCE_SNAPSHOT").is_file()
+PRIVATE_PILOT_ASSETS_AVAILABLE = all(
+    (ROOT / relative).is_file()
+    for relative in (
+        "preparation/preparation_lock.json",
+        "preparation/tokenizer_input_audit.json",
+        "preparation/assets/python_rdr/py_vncorenlp-0.1.4.tar.gz",
+    )
+)
 
 from nlp_btl.data import DataIntegrityError, ReviewRecord
 from nlp_btl.phobert import PhoBertTrainingError, _save_trainable_state
@@ -104,6 +113,10 @@ class CudaPilotTests(unittest.TestCase):
             with self.assertRaisesRegex(PhoBertTrainingError, "weights hash mismatch"):
                 _restore_pilot_checkpoint(torch, _TinyClassifier(), checkpoint_dir, expected_binding)
 
+    @unittest.skipUnless(
+        not PUBLIC_SOURCE_SNAPSHOT or PRIVATE_PILOT_ASSETS_AVAILABLE,
+        "requires private preparation lock and tokenizer/RDR audit assets omitted from the public snapshot",
+    )
     def test_cuda_unavailable_blocks_before_audit_or_dataset_load(self) -> None:
         private_root = ROOT / "results" / "m1-08"
         private_root.mkdir(parents=True, exist_ok=True)
@@ -126,6 +139,10 @@ class CudaPilotTests(unittest.TestCase):
             self.assertFalse((output / "pre_fit_audit.json").exists())
 
 
+    @unittest.skipUnless(
+        not PUBLIC_SOURCE_SNAPSHOT or PRIVATE_PILOT_ASSETS_AVAILABLE,
+        "requires private preparation lock and tokenizer/RDR audit assets omitted from the public snapshot",
+    )
     def test_pre_fit_os_failure_records_only_error_location(self) -> None:
         private_root = ROOT / "results" / "m1-08"
         private_root.mkdir(parents=True, exist_ok=True)
@@ -164,6 +181,10 @@ class CudaPilotTests(unittest.TestCase):
             self.assertFalse((output / "pre_fit_audit.json").exists())
 
 
+    @unittest.skipUnless(
+        not PUBLIC_SOURCE_SNAPSHOT or PRIVATE_PILOT_ASSETS_AVAILABLE,
+        "requires private preparation lock and tokenizer/RDR audit assets omitted from the public snapshot",
+    )
     def test_pilot_reuses_the_rdr_instance_returned_by_pre_fit_audit(self) -> None:
         import torch
 

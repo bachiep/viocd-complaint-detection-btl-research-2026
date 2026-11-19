@@ -34,4 +34,4 @@ staging/.venv_demo/Scripts/python.exe -m unittest tests.test_demo_integrity
 
 ## Bằng chứng demo
 
-Ảnh giao diện và receipt runtime được lưu trong `demo/evidence/`. Receipt chỉ ghi phiên bản môi trường và hash artifact, không ghi văn bản nhập. Ảnh minh họa dùng câu mẫu tổng hợp, không dùng review lấy từ dữ liệu nghiên cứu.
+Ảnh giao diện và receipt runtime nằm trong gói bàn giao kỹ thuật tại `demo/evidence/`; chúng không thuộc repo mã nguồn public dạng source-only. Receipt chỉ ghi phiên bản môi trường và hash artifact, không ghi văn bản nhập. Ảnh minh họa dùng câu mẫu tổng hợp, không dùng review lấy từ dữ liệu nghiên cứu.

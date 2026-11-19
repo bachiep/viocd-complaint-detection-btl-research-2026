@@ -11,10 +11,21 @@ from types import SimpleNamespace
 from dataclasses import dataclass
 import unittest
 from unittest import mock
+import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "src"))
+PUBLIC_SOURCE_SNAPSHOT = (ROOT / "PUBLIC_SOURCE_SNAPSHOT").is_file()
+REQUIRED_SCRIPTS = (
+    "preparation/scripts/run_locked_phobert_fit.py",
+    "preparation/scripts/run_locked_research.py",
+)
+if PUBLIC_SOURCE_SNAPSHOT and not all((ROOT / path).is_file() for path in REQUIRED_SCRIPTS):
+    pytest.skip(
+        "requires private fit-orchestration scripts omitted from the public snapshot",
+        allow_module_level=True,
+    )
 
 from preparation.scripts import run_locked_phobert_fit, run_locked_research
 

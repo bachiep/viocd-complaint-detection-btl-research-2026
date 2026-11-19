@@ -26,6 +26,12 @@ Selection was made on validation data: S0 Macro-F1 0.92070, P0 mean 0.91648, and
 - `THIRD_PARTY_NOTICES.md`: notices for bundled or referenced software.
 - `RELEASE_MANIFEST.sha256`: hashes for the released files; text files use LF line endings across platforms.
 
+## Public snapshot test scope
+
+Install the pinned public test/demo dependencies with `python -m pip install -r requirements-test.txt`. PyTorch is installed separately because its wheel depends on OS and Python: use the [official PyTorch selector](https://pytorch.org/get-started/locally/) and choose the CPU build; these contract tests do not need CUDA. Then run `python -m pytest -q`. The verified snapshot run on 20/11/2026 used Python 3.13.7, PyTorch 2.15.0+cpu and pytest 9.1.1; it passed 87 tests and 24 subtests, with 11 explicit skips.
+
+The `PUBLIC_SOURCE_SNAPSHOT` marker makes omissions explicit. Three modules skip at collection only in this marked snapshot when their Kaggle/preparation scripts or tokenizer audit are absent: `test_kaggle_staging.py`, `test_run_locked_research.py` and `test_terminal_runtime_package_targets.py`. Eight individual cases in `test_phobert.py` and `test_pilot.py` skip only in this marked snapshot when their private readiness locks, source-bundle assets or staged notebook are unavailable. The skip reasons are attached to those modules and test methods; the unrelated synthetic cases in both modules still run. Without the marker, an incomplete project checkout fails visibly instead of silently skipping these checks. In the full private project workspace, all 115 tests and 48 subtests passed on 20/11/2026. The public test result does not certify private Kaggle execution.
+
 ## Runtime recorded for the completed Kaggle runs
 
 Python 3.13.16; Tesla T4 × 2; CUDA 13.0; PyTorch 2.11.0+cu130; Transformers 4.51.3; tokenizers 0.21.4; NumPy 2.1.3; pandas 2.3.3; scikit-learn 1.8.0; Underthesea 9.5.0; py_vncorenlp 0.1.4; pyjnius 1.9.0; Java 21.0.12.1.

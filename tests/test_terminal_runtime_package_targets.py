@@ -4,10 +4,21 @@ import sys
 import json
 import unittest
 from pathlib import Path
+import pytest
 
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "preparation" / "scripts"))
+PUBLIC_SOURCE_SNAPSHOT = (ROOT / "PUBLIC_SOURCE_SNAPSHOT").is_file()
+REQUIRED_ASSETS = (
+    "preparation/scripts/prepare_kaggle_terminal_runtime.py",
+    "preparation/tokenizer_input_audit.json",
+)
+if PUBLIC_SOURCE_SNAPSHOT and not all((ROOT / path).is_file() for path in REQUIRED_ASSETS):
+    pytest.skip(
+        "requires the private Kaggle runtime preparation script and tokenizer audit omitted from the public snapshot",
+        allow_module_level=True,
+    )
 
 import prepare_kaggle_terminal_runtime as runtime
 
