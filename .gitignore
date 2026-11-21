@@ -15,6 +15,19 @@ report/
 *.pth
 *.zip
 
+# Private working materials and rendered submissions.
+outputs/
+graphify-out/
+private_*/
+docs/SUBMISSION_SIGNOFF*.md
+*.docx
+*.pdf
+*.pptx
+*.xlsx
+*.log
+*.pem
+*.key
+
 # Credentials and local runtime files.
 .env
 .env.*

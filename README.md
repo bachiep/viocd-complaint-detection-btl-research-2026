@@ -23,6 +23,8 @@ Selection was made on validation data: S0 Macro-F1 0.92070, P0 mean 0.91648, and
 - `tests/`: synthetic and contract-focused tests; they do not include source review text.
 - `preparation/protocol.json`: locked experiment protocol. Private data manifests and split files are not included.
 - `demo/`: local demo source and its pinned runtime requirements. The trained S0 artifact is intentionally omitted, so the demo cannot be run from this public snapshot alone.
+- [Submission result checker](tools/kiem_tra_ket_qua.py): recalculates metrics from aggregate counts and recomputes the interval from saved bootstrap differences. The submission bundle includes the checker and its inputs. Extract that bundle to a new directory and run `py -3 -X utf8 .\kiem_tra_ket_qua.py` from there. This repository publishes the checker source for inspection.
+- [Local demo setup](demo/README.md): artifact placement, startup and API verification.
 - `THIRD_PARTY_NOTICES.md`: notices for bundled or referenced software.
 - `RELEASE_MANIFEST.sha256`: hashes for the released files; text files use LF line endings across platforms.
 

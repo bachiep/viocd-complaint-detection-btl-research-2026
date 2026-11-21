@@ -2,6 +2,20 @@
 
 Demo cục bộ tải đúng artifact **S0 seed 42** đã được chọn bằng Macro-F1 trên validation. Demo không fit lại mô hình và không đọc tập test. Điểm validation hiển thị trên giao diện là 0,9207; đó không phải điểm kiểm tra hay xác suất của dự đoán.
 
+## Chuẩn bị tệp S0
+
+Lấy ba tệp S0 của đúng lượt phát triển đã ghim từ người quản lý bản chạy. Đặt các tệp vào thư mục gốc của bản checkout theo cây sau:
+
+```text
+results/m2_dev_v15_20261118_r3/
+  selection.json
+  S0_seed42/
+    run_metadata.json
+    pipeline.joblib
+```
+
+So sánh SHA-256 với giá trị `LOCKED_SELECTION_SHA256`, `LOCKED_RUN_METADATA_SHA256` và `LOCKED_PIPELINE_SHA256` trong [mã demo](app.py). Môi trường chỉ tải pipeline sau khi xác minh đúng tệp. Ba tệp này được cấp riêng cho người có quyền truy cập.
+
 ## Chạy trên Windows
 
 Từ thư mục gốc dự án, dùng Python 3.13:
@@ -10,10 +24,16 @@ Từ thư mục gốc dự án, dùng Python 3.13:
 py -3.13 -m venv staging/.venv_demo
 staging/.venv_demo/Scripts/python.exe -m pip install --upgrade pip
 staging/.venv_demo/Scripts/python.exe -m pip install -r demo/requirements.txt
-staging/.venv_demo/Scripts/python.exe demo/app.py
+staging/.venv_demo/Scripts/python.exe -u demo/app.py
 ```
 
-Mở `http://127.0.0.1:8765`. Dừng máy chủ bằng `Ctrl+C`.
+Chờ dòng “Demo sẵn sàng”, giữ máy chủ chạy, rồi mở cửa sổ PowerShell thứ hai ở cùng thư mục gốc:
+
+```powershell
+staging/.venv_demo/Scripts/python.exe demo/verify_demo.py
+```
+
+Verifier kiểm tra đúng lượt S0, hai ví dụ tổng hợp và giới hạn đầu vào. Khi thấy 5 dòng PASS, mở `http://127.0.0.1:8765`. Dừng máy chủ bằng `Ctrl+C` ở cửa sổ đầu tiên. Nếu chưa thấy thông báo sẵn sàng, xem lỗi ở cửa sổ đó và đối chiếu ba tệp S0 ở mục trên.
 
 Khi khởi động, ứng dụng kiểm tra hash của protocol, selection, run metadata, pipeline và năm tệp nguồn; đồng thời yêu cầu đúng phiên bản NumPy, scikit-learn và Underthesea. Hash của protocol và mã nguồn chuẩn hóa CRLF/LF thành LF để cùng một nội dung hoạt động trên Windows và Git checkout; hash của selection, run metadata và pipeline vẫn kiểm tra theo byte gốc. Các trường hash trong artifact tiếp tục đối chiếu với provenance của lần chạy. Nếu nội dung hoặc artifact khác bằng chứng đã nghiệm thu, ứng dụng dừng thay vì tải artifact khác.
 
